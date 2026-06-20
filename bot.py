@@ -1,9 +1,12 @@
 import telebot
 import random
 import os
+from flask import Flask, request
 
 API_TOKEN = os.environ.get('TELEGRAM_TOKEN', '8662174247:AAEHxJkPdZ6biDaw8WKp1rSLmVsbDfx_hwA')
 bot = telebot.TeleBot(API_TOKEN)
+
+app = Flask(__name__)
 
 GREETINGS = [
     "Happy Father's Day! 🎉 To the world's greatest dad!",
@@ -45,5 +48,17 @@ def send_funny(message):
 def send_heartfelt(message):
     bot.reply_to(message, random.choice(HEARTFELT_WISHES))
 
-print("🎉 Bot is running!")
-bot.infinity_polling()
+@app.route('/', methods=['GET'])
+def index():
+    return "Bot is running!", 200
+
+@app.route(f'/webhook/{API_TOKEN}', methods=['POST'])
+def webhook():
+    json_data = request.get_json()
+    update = telebot.types.Update.de_json(json_data)
+    bot.process_new_updates([update])
+    return "ok", 200
+
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
